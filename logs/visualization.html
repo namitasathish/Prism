@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRISM Data Visualization</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .chart-container {
+            position: relative;
+            margin: 20px auto;
+            height: 400px;
+            width: 90%;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-size: 1.2em;
+            color: #666;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen p-6">
+    <div class="max-w-7xl mx-auto">
+        <header class="bg-white rounded-lg shadow p-6 mb-6">
+            <h1 class="text-2xl font-bold text-gray-800">PRISM Data Visualization</h1>
+            <p class="text-gray-600">Visualizing moderation data in real-time</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Actions Chart -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">Message Actions</h2>
+                <div class="chart-container">
+                    <canvas id="actionsChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Labels Chart -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">Message Labels</h2>
+                <div class="chart-container">
+                    <canvas id="labelsChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Timeline Chart -->
+            <div class="bg-white rounded-lg shadow p-6 lg:col-span-2">
+                <h2 class="text-xl font-semibold mb-4">Activity Timeline</h2>
+                <div class="chart-container">
+                    <canvas id="timelineChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="bg-white rounded-lg shadow p-6 mt-6">
+            <h2 class="text-xl font-semibold mb-4">Recent Activity</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Label</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Content</th>
+                        </tr>
+                    </thead>
+                    <tbody id="activityBody" class="bg-white divide-y divide-gray-200">
+                        <tr>
+                            <td colspan="5" class="px-6 py-4 text-center text-gray-500">
+                                <div class="loading">Loading data...</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Chart instances
+        let actionsChart, labelsChart, timelineChart;
+        
+        // Colors for charts
+        const colors = {
+            flagged: 'rgba(245, 158, 11, 0.8)',  // yellow
+            deleted: 'rgba(239, 68, 68, 0.8)',   // red
+            allowed: 'rgba(16, 185, 129, 0.8)',  // green
+            spam: 'rgba(139, 92, 246, 0.8)',     // purple
+            toxic: 'rgba(220, 38, 38, 0.8)',     // red-600
+            other: 'rgba(107, 114, 128, 0.8)'    // gray-500
+        };
+
+        // Initialize charts
+        function initCharts() {
+            const actionsCtx = document.getElementById('actionsChart').getContext('2d');
+            const labelsCtx = document.getElementById('labelsChart').getContext('2d');
+            const timelineCtx = document.getElementById('timelineChart').getContext('2d');
+            
+            // Actions chart (bar)
+            actionsChart = new Chart(actionsCtx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Count',
+                        data: [],
+                        backgroundColor: []
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Labels chart (doughnut)
+            labelsChart = new Chart(labelsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: []
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        }
+                    }
+                }
+            });
+
+            // Timeline chart (line)
+            timelineChart = new Chart(timelineCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Messages',
+                        data: [],
+                        borderColor: 'rgba(79, 70, 229, 0.8)',
+                        backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Process and update charts with data
+        function updateCharts(data) {
+            // Process actions
+            const actions = {};
+            const labels = {};
+            const timeline = {};
+            
+            data.events.forEach(event => {
+                // Count actions
+                actions[event.action] = (actions[event.action] || 0) + 1;
+                
+                // Count labels
+                if (event.label) {
+                    labels[event.label] = (labels[event.label] || 0) + 1;
+                }
+                
+                // Group by date for timeline
+                const date = event.timestamp.split('T')[0];
+                timeline[date] = (timeline[date] || 0) + 1;
+            });
+            
+            // Update actions chart
+            const actionLabels = Object.keys(actions);
+            const actionData = Object.values(actions);
+            const actionColors = actionLabels.map(action => 
+                colors[action.toLowerCase()] || colors.other
+            );
+            
+            actionsChart.data.labels = actionLabels;
+            actionsChart.data.datasets[0].data = actionData;
+            actionsChart.data.datasets[0].backgroundColor = actionColors;
+            actionsChart.update();
+            
+            // Update labels chart
+            const labelLabels = Object.keys(labels);
+            const labelData = Object.values(labels);
+            const labelColors = labelLabels.map(label => 
+                colors[label.toLowerCase()] || colors.other
+            );
+            
+            labelsChart.data.labels = labelLabels;
+            labelsChart.data.datasets[0].data = labelData;
+            labelsChart.data.datasets[0].backgroundColor = labelColors;
+            labelsChart.update();
+            
+            // Update timeline chart
+            const timelineDates = Object.keys(timeline).sort();
+            const timelineCounts = timelineDates.map(date => timeline[date]);
+            
+            timelineChart.data.labels = timelineDates;
+            timelineChart.data.datasets[0].data = timelineCounts;
+            timelineChart.update();
+        }
+
+        // Update activity table
+        function updateActivityTable(events) {
+            const tbody = document.getElementById('activityBody');
+            
+            if (!events || events.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="px-6 py-4 text-center text-gray-500">
+                            No activity found
+                        </td>
+                    </tr>`;
+                return;
+            }
+            
+            // Sort by timestamp (newest first) and take first 10
+            const recentEvents = [...events]
+                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                .slice(0, 10);
+            
+            // Update table
+            tbody.innerHTML = recentEvents.map(event => {
+                const time = new Date(event.timestamp).toLocaleString();
+                const actionClass = event.action === 'deleted' ? 'bg-red-100 text-red-800' : 
+                                 event.action === 'flagged' ? 'bg-yellow-100 text-yellow-800' : 
+                                 'bg-green-100 text-green-800';
+                
+                return `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            ${time}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            ${event.user || 'Unknown'}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${actionClass}">
+                                ${event.action || 'N/A'}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            ${event.label || '-'}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-900 max-w-xs truncate" title="${event.content || ''}">
+                            ${event.content || 'No content'}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Load and process data
+        async function loadData() {
+            try {
+                const response = await fetch('report_data.json');
+                if (!response.ok) throw new Error('Failed to load data');
+                
+                const data = await response.json();
+                updateCharts(data);
+                updateActivityTable(data.events);
+                
+            } catch (error) {
+                console.error('Error loading data:', error);
+                const tbody = document.getElementById('activityBody');
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="px-6 py-4 text-center text-red-600">
+                            Error loading data. Please make sure the server is running and try again.
+                        </td>
+                    </tr>`;
+            }
+        }
+
+        // Initialize everything when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            initCharts();
+            loadData();
+            
+            // Auto-refresh every 30 seconds
+            setInterval(loadData, 30000);
+        });
+    </script>
+</body>
+</html>

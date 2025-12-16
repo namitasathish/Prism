@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔒 PRISM Moderation Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --success: #10b981;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            padding: 2rem 1rem;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .stats {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .stat-card {
+            background: var(--card-bg);
+            border-radius: 0.5rem;
+            padding: 1rem 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            min-width: 180px;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+        
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+        
+        .dashboard {
+            background: var(--card-bg);
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            overflow: hidden;
+        }
+        
+        .filters {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+        
+        select, input[type="text"] {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 0.375rem;
+            font-family: inherit;
+            font-size: 0.875rem;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+        
+        th {
+            background-color: #f8fafc;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-align: left;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+        
+        td {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+        }
+        
+        tr:last-child td {
+            border-bottom: none;
+        }
+        
+        tr.deleted {
+            background-color: #fef2f2;
+        }
+        
+        tr.flagged {
+            background-color: #fffbeb;
+        }
+        
+        tr:hover {
+            background-color: #f8fafc;
+        }
+        
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .badge.flagged {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        
+        .badge.deleted {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .confidence {
+            position: relative;
+            height: 24px;
+            background-color: #e2e8f0;
+            border-radius: 0.25rem;
+            overflow: hidden;
+        }
+        
+        .confidence-bar {
+            height: 100%;
+            background-color: var(--primary);
+            min-width: 2px;
+            transition: width 0.3s ease;
+        }
+        
+        .confidence span {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+            text-shadow: 0 0 2px rgba(0,0,0,0.3);
+        }
+        
+        .message {
+            max-width: 300px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .label {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            background-color: #e0f2fe;
+            color: #0369a1;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .empty-state {
+            padding: 3rem 1.5rem;
+            text-align: center;
+            color: var(--text-muted);
+        }
+        
+        @media (max-width: 1024px) {
+            .container {
+                padding: 0 1rem;
+            }
+            
+            .stat-card {
+                flex: 1 1 100%;
+            }
+            
+            table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1>🔒 PRISM Moderation Dashboard</h1>
+                <p>Real-time monitoring of flagged and moderated content</p>
+            </div>
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="total-flagged">0</div>
+                    <div class="stat-label">Total Flagged</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="total-deleted">0</div>
+                    <div class="stat-label">Messages Deleted</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="total-users">0</div>
+                    <div class="stat-label">Unique Users</div>
+                </div>
+            </div>
+        </header>
+        
+        <div class="dashboard">
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="filter-action">Action:</label>
+                    <select id="filter-action">
+                        <option value="">All Actions</option>
+                        <option value="flagged">Flagged</option>
+                        <option value="deleted">Deleted</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="filter-user">User:</label>
+                    <input type="text" id="filter-user" placeholder="Filter by username">
+                </div>
+                <div class="filter-group">
+                    <label for="filter-content">Message:</label>
+                    <input type="text" id="filter-content" placeholder="Search in messages">
+                </div>
+            </div>
+            
+            <div style="overflow-x: auto;">
+                <table id="moderation-table">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Action</th>
+                            <th>User</th>
+                            <th>Category</th>
+                            <th>Confidence</th>
+                            <th>Message</th>
+                            <th>Channel</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+
+            <tr class="flagged">
+                <td>2025-11-11 16:03:55</td>
+                <td><span class="badge flagged">FLAGGED</span></td>
+                <td><strong>sly_cobra.</strong><br><small>ID: 1109423389275344906</small></td>
+                <td><span class="label">bullying</span></td>
+                <td><div class="confidence">
+                    <div class="confidence-bar" style="width: 74.50895880747522%"></div>
+                    <span>74.5%</span>
+                </div></td>
+                <td class="message">hi you are soooooo beautiful</td>
+                <td>Prism/general</td>
+            </tr>
+            
+
+            <tr class="deleted">
+                <td>2025-11-11 15:51:13</td>
+                <td><span class="badge deleted">DELETED</span></td>
+                <td><strong>raspberry09429</strong><br><small>ID: 1430978453376864322</small></td>
+                <td><span class="label">spam</span></td>
+                <td><div class="confidence">
+                    <div class="confidence-bar" style="width: 94.53119061105103%"></div>
+                    <span>94.5%</span>
+                </div></td>
+                <td class="message">JOIN NOW!!! JOIN NOW!!!, immmediately joinnnn here limitted setata available dont miss out Subscribe now to win free Nitro!</td>
+                <td>Prism/general</td>
+            </tr>
+            
+
+            <tr class="flagged">
+                <td>2025-11-11 15:46:02</td>
+                <td><span class="badge flagged">FLAGGED</span></td>
+                <td><strong>sly_cobra.</strong><br><small>ID: 1109423389275344906</small></td>
+                <td><span class="label">bullying</span></td>
+                <td><div class="confidence">
+                    <div class="confidence-bar" style="width: 61.576420230569575%"></div>
+                    <span>61.6%</span>
+                </div></td>
+                <td class="message">how are you</td>
+                <td>Prism/general</td>
+            </tr>
+            
+
+            <tr class="deleted">
+                <td>2025-11-08 17:36:16</td>
+                <td><span class="badge deleted">DELETED</span></td>
+                <td><strong>raspberry09429</strong><br><small>ID: 1430978453376864322</small></td>
+                <td><span class="label">spam</span></td>
+                <td><div class="confidence">
+                    <div class="confidence-bar" style="width: 94.57476842099929%"></div>
+                    <span>94.6%</span>
+                </div></td>
+                <td class="message">Click this link for 1000 free followers!</td>
+                <td>Prism/general</td>
+            </tr>
+            
+
+            <tr class="deleted">
+                <td>2025-11-08 16:50:51</td>
+                <td><span class="badge deleted">DELETED</span></td>
+                <td><strong>raspberry09429</strong><br><small>ID: 1430978453376864322</small></td>
+                <td><span class="label">spam</span></td>
+                <td><div class="confidence">
+                    <div class="confidence-bar" style="width: 94.57476842099929%"></div>
+                    <span>94.6%</span>
+                </div></td>
+                <td class="message">Click this link for 1000 free followers!</td>
+                <td>Prism/general</td>
+            </tr>
+            
+
+            <tr class="deleted">
+                <td>2025-11-08 16:43:39</td>
+                <td><span class="badge deleted">DELETED</span></td>
+                <td><strong>raspberry09429</strong><br><small>ID: 1430978453376864322</small></td>
+                <td><span class="label">bullying</span></td>
+                <td><div class="confidence">
+                    <div class="confidence-bar" style="width: 88.6734335539824%"></div>
+                    <span>88.7%</span>
+                </div></td>
+                <td class="message">You’re such a loser</td>
+                <td>Prism/general</td>
+            </tr>
+            
+
+            <tr class="flagged">
+                <td>2025-11-08 15:34:42</td>
+                <td><span class="badge flagged">FLAGGED</span></td>
+                <td><strong>sly_cobra.</strong><br><small>ID: 1109423389275344906</small></td>
+                <td><span class="label">bullying</span></td>
+                <td><div class="confidence">
+                    <div class="confidence-bar" style="width: 88.6734335539824%"></div>
+                    <span>88.7%</span>
+                </div></td>
+                <td class="message">You’re such a loser</td>
+                <td>Prism/general</td>
+            </tr>
+            
+
+            <tr class="deleted">
+                <td>2025-10-31 14:17:11</td>
+                <td><span class="badge deleted">DELETED</span></td>
+                <td><strong>raspberry09429</strong><br><small>ID: 1430978453376864322</small></td>
+                <td><span class="label">spam</span></td>
+                <td><div class="confidence">
+                    <div class="confidence-bar" style="width: 94.53119061105103%"></div>
+                    <span>94.5%</span>
+                </div></td>
+                <td class="message">JOIN NOW!!! JOIN NOW!!!, immmediately joinnnn here limitted setata available dont miss out Subscribe now to win free Nitro!</td>
+                <td>Prism/general</td>
+            </tr>
+            
+
+            <tr class="deleted">
+                <td>2025-10-31 12:19:57</td>
+                <td><span class="badge deleted">DELETED</span></td>
+                <td><strong>raspberry09429</strong><br><small>ID: 1430978453376864322</small></td>
+                <td><span class="label">spam</span></td>
+                <td><div class="confidence">
+                    <div class="confidence-bar" style="width: 94.98706257707636%"></div>
+                    <span>95.0%</span>
+                </div></td>
+                <td class="message">OIN NOW!!! JOIN NOW!!!, immmediately joinnnn here limitted setata available dont miss out Subscribe now to win free Nitro!</td>
+                <td>Prism/general</td>
+            </tr>
+            
+
+            <tr class="deleted">
+                <td>2025-10-31 12:19:08</td>
+                <td><span class="badge deleted">DELETED</span></td>
+                <td><strong>raspberry09429</strong><br><small>ID: 1430978453376864322</small></td>
+                <td><span class="label">spam</span></td>
+                <td><div class="confidence">
+                    <div class="confidence-bar" style="width: 94.98706257707636%"></div>
+                    <span>95.0%</span>
+                </div></td>
+                <td class="message">OIN NOW!!! JOIN NOW!!!, immmediately joinnnn here limitted setata available dont miss out Subscribe now to win free Nitro!</td>
+                <td>Prism/general</td>
+            </tr>
+            
+
+            <tr class="deleted">
+                <td>2025-10-31 11:47:33</td>
+                <td><span class="badge deleted">DELETED</span></td>
+                <td><strong>raspberry09429</strong><br><small>ID: 1430978453376864322</small></td>
+                <td><span class="label">spam</span></td>
+                <td><div class="confidence">
+                    <div class="confidence-bar" style="width: 94.53119061105103%"></div>
+                    <span>94.5%</span>
+                </div></td>
+                <td class="message">JOIN NOW!!! JOIN NOW!!!, immmediately joinnnn here limitted setata available dont miss out Subscribe now to win free Nitro!</td>
+                <td>Prism/general</td>
+            </tr>
+            
+
+            <tr class="deleted">
+                <td>2025-10-31 11:41:32</td>
+                <td><span class="badge deleted">DELETED</span></td>
+                <td><strong>raspberry09429</strong><br><small>ID: 1430978453376864322</small></td>
+                <td><span class="label">spam</span></td>
+                <td><div class="confidence">
+                    <div class="confidence-bar" style="width: 94.53119061105103%"></div>
+                    <span>94.5%</span>
+                </div></td>
+                <td class="message">JOIN NOW!!! JOIN NOW!!!, immmediately joinnnn here limitted setata available dont miss out Subscribe now to win free Nitro!</td>
+                <td>Prism/general</td>
+            </tr>
+            
+
+            <tr class="deleted">
+                <td>2025-10-31 11:27:10</td>
+                <td><span class="badge deleted">DELETED</span></td>
+                <td><strong>raspberry09429</strong><br><small>ID: 1430978453376864322</small></td>
+                <td><span class="label">spam</span></td>
+                <td><div class="confidence">
+                    <div class="confidence-bar" style="width: 94.53119061105103%"></div>
+                    <span>94.5%</span>
+                </div></td>
+                <td class="message">JOIN NOW!!! JOIN NOW!!!, immmediately joinnnn here limitted setata available dont miss out Subscribe now to win free Nitro!</td>
+                <td>Prism/general</td>
+            </tr>
+            
+
+            <tr class="deleted">
+                <td>2025-10-30 20:20:43</td>
+                <td><span class="badge deleted">DELETED</span></td>
+                <td><strong>raspberry09429</strong><br><small>ID: 1430978453376864322</small></td>
+                <td><span class="label">bullying</span></td>
+                <td><div class="confidence">
+                    <div class="confidence-bar" style="width: 88.6734335539824%"></div>
+                    <span>88.7%</span>
+                </div></td>
+                <td class="message">you're such a loser</td>
+                <td>Prism/general</td>
+            </tr>
+            
+
+            <tr class="deleted">
+                <td>2025-10-30 20:16:21</td>
+                <td><span class="badge deleted">DELETED</span></td>
+                <td><strong>raspberry09429</strong><br><small>ID: 1430978453376864322</small></td>
+                <td><span class="label">bullying</span></td>
+                <td><div class="confidence">
+                    <div class="confidence-bar" style="width: 88.6734335539824%"></div>
+                    <span>88.7%</span>
+                </div></td>
+                <td class="message">you're such a loser</td>
+                <td>Prism/general</td>
+            </tr>
+            
+
+            <tr class="deleted">
+                <td>2025-10-30 19:23:05</td>
+                <td><span class="badge deleted">DELETED</span></td>
+                <td><strong>raspberry09429</strong><br><small>ID: 1430978453376864322</small></td>
+                <td><span class="label">bullying</span></td>
+                <td><div class="confidence">
+                    <div class="confidence-bar" style="width: 88.6734335539824%"></div>
+                    <span>88.7%</span>
+                </div></td>
+                <td class="message">you're such a loser</td>
+                <td>Prism/general</td>
+            </tr>
+            
+
+            <tr class="deleted">
+                <td>2025-10-30 19:21:19</td>
+                <td><span class="badge deleted">DELETED</span></td>
+                <td><strong>dedd0872</strong><br><small>ID: 1430977840257568868</small></td>
+                <td><span class="label">bullying</span></td>
+                <td><div class="confidence">
+                    <div class="confidence-bar" style="width: 88.6734335539824%"></div>
+                    <span>88.7%</span>
+                </div></td>
+                <td class="message">you're such a loser</td>
+                <td>Prism/general</td>
+            </tr>
+            
+
+            <tr class="deleted">
+                <td>2025-10-30 19:15:36</td>
+                <td><span class="badge deleted">DELETED</span></td>
+                <td><strong>raspberry09429</strong><br><small>ID: 1430978453376864322</small></td>
+                <td><span class="label">spam</span></td>
+                <td><div class="confidence">
+                    <div class="confidence-bar" style="width: 94.53119061105103%"></div>
+                    <span>94.5%</span>
+                </div></td>
+                <td class="message">JOIN NOW!!! JOIN NOW!!!, immmediately joinnnn here limitted setata available dont miss out Subscribe now to win free Nitro!</td>
+                <td>Prism/general</td>
+            </tr>
+            
+
+            <tr class="deleted">
+                <td>2025-10-30 19:11:04</td>
+                <td><span class="badge deleted">DELETED</span></td>
+                <td><strong>raspberry09429</strong><br><small>ID: 1430978453376864322</small></td>
+                <td><span class="label">scam</span></td>
+                <td><div class="confidence">
+                    <div class="confidence-bar" style="width: 91.0692141088125%"></div>
+                    <span>91.1%</span>
+                </div></td>
+                <td class="message">invest 500 earn 5000 in two days!</td>
+                <td>Prism/general</td>
+            </tr>
+            
+
+            <tr class="deleted">
+                <td>2025-10-30 19:07:14</td>
+                <td><span class="badge deleted">DELETED</span></td>
+                <td><strong>raspberry09429</strong><br><small>ID: 1430978453376864322</small></td>
+                <td><span class="label">scam</span></td>
+                <td><div class="confidence">
+                    <div class="confidence-bar" style="width: 92.96151763422536%"></div>
+                    <span>93.0%</span>
+                </div></td>
+                <td class="message">invest 500 and earn 5000 in two days!</td>
+                <td>Prism/general</td>
+            </tr>
+            
+
+            <tr class="deleted">
+                <td>2025-10-30 19:02:58</td>
+                <td><span class="badge deleted">DELETED</span></td>
+                <td><strong>raspberry09429</strong><br><small>ID: 1430978453376864322</small></td>
+                <td><span class="label">scam</span></td>
+                <td><div class="confidence">
+                    <div class="confidence-bar" style="width: 92.96151763422536%"></div>
+                    <span>93.0%</span>
+                </div></td>
+                <td class="message">invest 500 and earn 5000 in two days!</td>
+                <td>Prism/general</td>
+            </tr>
+            
+
+            <tr class="deleted">
+                <td>2025-10-25 21:15:33</td>
+                <td><span class="badge deleted">DELETED</span></td>
+                <td><strong>dedd0872</strong><br><small>ID: 1430977840257568868</small></td>
+                <td><span class="label">spam</span></td>
+                <td><div class="confidence">
+                    <div class="confidence-bar" style="width: 94.53119061105103%"></div>
+                    <span>94.5%</span>
+                </div></td>
+                <td class="message">JOIN NOW!!! JOIN NOW!!!, immmediately joinnnn here limitted setata available dont miss out Subscribe now to win free Nitro!</td>
+                <td>Prism/general</td>
+            </tr>
+            
+
+            <tr class="deleted">
+                <td>2025-10-25 21:09:31</td>
+                <td><span class="badge deleted">DELETED</span></td>
+                <td><strong>dedd0872</strong><br><small>ID: 1430977840257568868</small></td>
+                <td><span class="label">spam</span></td>
+                <td><div class="confidence">
+                    <div class="confidence-bar" style="width: 94.53119061105103%"></div>
+                    <span>94.5%</span>
+                </div></td>
+                <td class="message">JOIN NOW!!! JOIN NOW!!!, immmediately joinnnn here limitted setata available dont miss out Subscribe now to win free Nitro!</td>
+                <td>Prism/general</td>
+            </tr>
+            
+
+            <tr class="deleted">
+                <td>2025-10-25 21:08:48</td>
+                <td><span class="badge deleted">DELETED</span></td>
+                <td><strong>dedd0872</strong><br><small>ID: 1430977840257568868</small></td>
+                <td><span class="label">spam</span></td>
+                <td><div class="confidence">
+                    <div class="confidence-bar" style="width: 94.57476842099929%"></div>
+                    <span>94.6%</span>
+                </div></td>
+                <td class="message">Click this link for 1000 free followers!</td>
+                <td>Prism/general</td>
+            </tr>
+            
+
+            <tr class="deleted">
+                <td>2025-10-25 21:06:55</td>
+                <td><span class="badge deleted">DELETED</span></td>
+                <td><strong>raspberry09429</strong><br><small>ID: 1430978453376864322</small></td>
+                <td><span class="label">scam</span></td>
+                <td><div class="confidence">
+                    <div class="confidence-bar" style="width: 92.96151763422536%"></div>
+                    <span>93.0%</span>
+                </div></td>
+                <td class="message">Invest 500 and earn 5000 in two days!</td>
+                <td>Prism/general</td>
+            </tr>
+            
+
+            <tr class="deleted">
+                <td>2025-10-25 21:02:47</td>
+                <td><span class="badge deleted">DELETED</span></td>
+                <td><strong>raspberry09429</strong><br><small>ID: 1430978453376864322</small></td>
+                <td><span class="label">scam</span></td>
+                <td><div class="confidence">
+                    <div class="confidence-bar" style="width: 92.96151763422536%"></div>
+                    <span>93.0%</span>
+                </div></td>
+                <td class="message">Invest 500 and earn 5000 in two days!</td>
+                <td>Prism/general</td>
+            </tr>
+            
+
+            <tr class="deleted">
+                <td>2025-10-23 23:35:00</td>
+                <td><span class="badge deleted">DELETED</span></td>
+                <td><strong>dedd0872</strong><br><small>ID: 1430977840257568868</small></td>
+                <td><span class="label">spam</span></td>
+                <td><div class="confidence">
+                    <div class="confidence-bar" style="width: 94.57476842099929%"></div>
+                    <span>94.6%</span>
+                </div></td>
+                <td class="message">Click this link for 1000 free followers!</td>
+                <td>Prism/general</td>
+            </tr>
+            
+
+            <tr class="deleted">
+                <td>2025-10-23 23:29:56</td>
+                <td><span class="badge deleted">DELETED</span></td>
+                <td><strong>raspberry09429</strong><br><small>ID: 1430978453376864322</small></td>
+                <td><span class="label">bullying</span></td>
+                <td><div class="confidence">
+                    <div class="confidence-bar" style="width: 88.6734335539824%"></div>
+                    <span>88.7%</span>
+                </div></td>
+                <td class="message">You’re such a loser</td>
+                <td>Prism/general</td>
+            </tr>
+            
+
+            <tr class="flagged">
+                <td>2025-10-23 23:22:55</td>
+                <td><span class="badge flagged">FLAGGED</span></td>
+                <td><strong>sly_cobra.</strong><br><small>ID: 1109423389275344906</small></td>
+                <td><span class="label">bullying</span></td>
+                <td><div class="confidence">
+                    <div class="confidence-bar" style="width: 88.6734335539824%"></div>
+                    <span>88.7%</span>
+                </div></td>
+                <td class="message">You’re such a loser</td>
+                <td>Prism/general</td>
+            </tr>
+            
+
+            <tr class="flagged">
+                <td>2025-10-23 23:19:33</td>
+                <td><span class="badge flagged">FLAGGED</span></td>
+                <td><strong>sly_cobra.</strong><br><small>ID: 1109423389275344906</small></td>
+                <td><span class="label">spam</span></td>
+                <td><div class="confidence">
+                    <div class="confidence-bar" style="width: 94.53119061105103%"></div>
+                    <span>94.5%</span>
+                </div></td>
+                <td class="message">JOIN NOW!!! JOIN NOW!!!, immmediately joinnnn here limitted setata available dont miss out Subscribe now to win free Nitro!</td>
+                <td>Prism/general</td>
+            </tr>
+            
+
+            <tr class="flagged">
+                <td>2025-10-23 23:18:40</td>
+                <td><span class="badge flagged">FLAGGED</span></td>
+                <td><strong>sly_cobra.</strong><br><small>ID: 1109423389275344906</small></td>
+                <td><span class="label">spam</span></td>
+                <td><div class="confidence">
+                    <div class="confidence-bar" style="width: 94.53119061105103%"></div>
+                    <span>94.5%</span>
+                </div></td>
+                <td class="message">JOIN NOW!!! JOIN NOW!!!, immmediately joinnnn here limitted setata available dont miss out Subscribe now to win free Nitro!</td>
+                <td>Prism/general</td>
+            </tr>
+            
+
+            <tr class="flagged">
+                <td>2025-10-23 22:12:09</td>
+                <td><span class="badge flagged">FLAGGED</span></td>
+                <td><strong>sly_cobra.</strong><br><small>ID: 1109423389275344906</small></td>
+                <td><span class="label">spam</span></td>
+                <td><div class="confidence">
+                    <div class="confidence-bar" style="width: 94.53119061105103%"></div>
+                    <span>94.5%</span>
+                </div></td>
+                <td class="message">JOIN NOW!!! JOIN NOW!!!, immmediately joinnnn here limitted setata available dont miss out Subscribe now to win free Nitro!</td>
+                <td>Prism/general</td>
+            </tr>
+            
+
+            <tr class="flagged">
+                <td>2025-10-23 22:11:45</td>
+                <td><span class="badge flagged">FLAGGED</span></td>
+                <td><strong>sly_cobra.</strong><br><small>ID: 1109423389275344906</small></td>
+                <td><span class="label">spam</span></td>
+                <td><div class="confidence">
+                    <div class="confidence-bar" style="width: 94.53119061105103%"></div>
+                    <span>94.5%</span>
+                </div></td>
+                <td class="message">JOIN NOW!!! JOIN NOW!!!, immmediately joinnnn here limitted setata available dont miss out Subscribe now to win free Nitro!</td>
+                <td>Prism/general</td>
+            </tr>
+            
+
+            <tr class="flagged">
+                <td>2025-10-23 20:35:31</td>
+                <td><span class="badge flagged">FLAGGED</span></td>
+                <td><strong>sly_cobra.</strong><br><small>ID: 1109423389275344906</small></td>
+                <td><span class="label">spam</span></td>
+                <td><div class="confidence">
+                    <div class="confidence-bar" style="width: 94.53119061105103%"></div>
+                    <span>94.5%</span>
+                </div></td>
+                <td class="message">JOIN NOW!!! JOIN NOW!!!, immmediately joinnnn here limitted setata available dont miss out Subscribe now to win free Nitro!</td>
+                <td>Prism/general</td>
+            </tr>
+            
+
+            <tr class="flagged">
+                <td>2025-10-23 20:34:21</td>
+                <td><span class="badge flagged">FLAGGED</span></td>
+                <td><strong>sly_cobra.</strong><br><small>ID: 1109423389275344906</small></td>
+                <td><span class="label">spam</span></td>
+                <td><div class="confidence">
+                    <div class="confidence-bar" style="width: 94.53119061105103%"></div>
+                    <span>94.5%</span>
+                </div></td>
+                <td class="message">JOIN NOW!!! JOIN NOW!!!, immmediately joinnnn here limitted setata available dont miss out Subscribe now to win free Nitro!</td>
+                <td>Prism/general</td>
+            </tr>
+            
+                    </tbody>
+                </table>
+            </div>
+            
+            <div id="empty-state" class="empty-state" style="display: none;">
+                <p>No moderation events found matching your filters.</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Load data from JSON file
+        async function loadData() {
+            try {
+                const response = await fetch('report_data.json');
+                const data = await response.json();
+                return data.events || [];
+            } catch (error) {
+                console.error('Error loading data:', error);
+                return [];
+            }
+        }
+        
+        // Filter and display data
+        async function updateDashboard() {
+            const events = await loadData();
+            const actionFilter = document.getElementById('filter-action').value.toLowerCase();
+            const userFilter = document.getElementById('filter-user').value.toLowerCase();
+            const contentFilter = document.getElementById('filter-content').value.toLowerCase();
+            
+            const filteredEvents = events.filter(event => {
+                const matchesAction = !actionFilter || event.action.toLowerCase() === actionFilter;
+                const matchesUser = !userFilter || event.user.toLowerCase().includes(userFilter);
+                const matchesContent = !contentFilter || 
+                    (event.content && event.content.toLowerCase().includes(contentFilter));
+                
+                return matchesAction && matchesUser && matchesContent;
+            });
+            
+            // Update stats
+            updateStats(events);
+            
+            // Render table
+            renderTable(filteredEvents);
+        }
+        
+        // Update statistics
+        function updateStats(events) {
+            const flaggedCount = events.filter(e => e.action === 'flagged').length;
+            const deletedCount = events.filter(e => e.action === 'deleted').length;
+            const uniqueUsers = new Set(events.map(e => e.user_id)).size;
+            
+            document.getElementById('total-flagged').textContent = flaggedCount;
+            document.getElementById('total-deleted').textContent = deletedCount;
+            document.getElementById('total-users').textContent = uniqueUsers;
+        }
+        
+        // Render table rows
+        function renderTable(events) {
+            const tbody = document.querySelector('#moderation-table tbody');
+            const emptyState = document.getElementById('empty-state');
+            
+            if (!events.length) {
+                tbody.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            
+            const rows = events.map(event => {
+                const date = new Date(event.timestamp);
+                const formattedDate = date.toLocaleString();
+                const probPercent = (event.prob * 100).toFixed(1) + '%';
+                
+                return `
+                    <tr class="${event.action}">
+                        <td>${formattedDate}</td>
+                        <td><span class="badge ${event.action}">${event.action.toUpperCase()}</span></td>
+                        <td><strong>${escapeHtml(event.user)}</strong><br><small>ID: ${event.user_id}</small></td>
+                        <td><span class="label">${escapeHtml(event.label)}</span></td>
+                        <td>
+                            <div class="confidence">
+                                <div class="confidence-bar" style="width: ${event.prob * 100}%"></div>
+                                <span>${probPercent}</span>
+                            </div>
+                        </td>
+                        <td class="message" title="${escapeHtml(event.content)}">${escapeHtml(truncate(event.content, 50))}</td>
+                        <td>${escapeHtml(event.channel)}</td>
+                    </tr>
+                `;
+            }).join('');
+            
+            tbody.innerHTML = rows;
+        }
+        
+        // Helper functions
+        function escapeHtml(unsafe) {
+            if (!unsafe) return '';
+            return String(unsafe)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+        
+        function truncate(str, length) {
+            if (!str) return '';
+            return str.length > length ? str.substring(0, length) + '...' : str;
+        }
+        
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initial load
+            updateDashboard();
+            
+            // Set up filter event listeners
+            document.getElementById('filter-action').addEventListener('change', updateDashboard);
+            document.getElementById('filter-user').addEventListener('input', updateDashboard);
+            document.getElementById('filter-content').addEventListener('input', updateDashboard);
+            
+            // Auto-refresh every 30 seconds
+            setInterval(updateDashboard, 30000);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔒 PRISM Moderation Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Existing styles */
+        :root {
+            --primary: #6d28d9;
+            --primary-hover: #5b21b6;
+            --primary-glow: rgba(109, 40, 217, 0.3);
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --danger-glow: rgba(239, 68, 68, 0.3);
+            --warning: #f59e0b;
+            --warning-glow: rgba(245, 158, 11, 0.3);
+            --success: #10b981;
+            --success-glow: rgba(16, 185, 129, 0.3);
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --card-hover: #f1f5f9;
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --card-glow: 0 0 10px rgba(0, 0, 0, 0.05);
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --input-bg: #ffffff;
+            --input-border: #cbd5e1;
+            --input-focus: #a5b4fc;
+            --toast-bg: #1e293b;
+            --toast-text: #f8fafc;
+            --toast-success: #10b981;
+            --toast-error: #ef4444;
+            --toast-warning: #f59e0b;
+            --toast-info: #3b82f6;
+        }
+
+        /* Dark theme */
+        [data-theme="dark"] {
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --card-hover: #2d3748;
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+            --card-glow: 0 0 15px rgba(0, 0, 0, 0.3);
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #2d3748;
+            --input-bg: #1e293b;
+            --input-border: #4b5563;
+            --input-focus: #818cf8;
+        }
+
+        /* Base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            transition: background-color 0.3s, color 0.3s;
+            padding: 0;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+
+        /* Header styles */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+        }
+
+        header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text);
+            margin: 0 0 0.5rem 0;
+        }
+
+        header p {
+            color: var(--text-muted);
+            margin: 0;
+            font-size: 1rem;
+        }
+
+        .stats {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border-radius: 0.5rem;
+            padding: 1rem 1.5rem;
+            box-shadow: var(--card-shadow);
+            min-width: 160px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--primary);
+            line-height: 1.2;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        /* Dashboard layout */
+        .dashboard {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 1.5rem;
+        }
+
+        /* Filter section */
+        .filters {
+            background: var(--card-bg);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: var(--card-shadow);
+            height: fit-content;
+            position: sticky;
+            top: 1.5rem;
+        }
+
+        .filter-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-section h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text);
+            margin: 0 0 1rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .filter-section h3 i {
+            color: var(--primary);
+        }
+
+        .filter-group {
+            margin-bottom: 1rem;
+        }
+
+        .filter-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .filter-group input[type="text"],
+        .filter-group input[type="datetime-local"],
+        .filter-group select,
+        .select2-container--default .select2-selection--multiple {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            border: 1px solid var(--input-border);
+            border-radius: 0.375rem;
+            background-color: var(--input-bg);
+            color: var(--text);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .filter-group input[type="text"]:focus,
+        .filter-group input[type="datetime-local"]:focus,
+        .select2-container--default.select2-container--focus .select2-selection--multiple {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-glow);
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .filter-row .filter-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+            border-color: var(--primary-hover);
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            color: var(--primary);
+            border: 1px solid var(--primary);
+        }
+
+        .btn-outline:hover {
+            background-color: rgba(109, 40, 217, 0.1);
+        }
+
+        .btn-danger {
+            background-color: var(--danger);
+            color: white;
+            border-color: var(--danger);
+        }
+
+        .btn-danger:hover {
+            background-color: var(--danger-hover);
+            border-color: var(--danger-hover);
+        }
+
+        /* Table styles */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            font-size: 0.875rem;
+            background: var(--card-bg);
+            border-radius: 0.75rem;
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
+        }
+
+        th, td {
+            padding: 1rem 1.5rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background-color: var(--card-bg);
+            color: var(--text-muted);
+            font-weight: 600;
+            text-align: left;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            white-space: nowrap;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background-color: var(--card-hover);
+        }
+
+        /* Status badges */
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border-radius: 9999px;
+            text-transform: capitalize;
+        }
+
+        .badge-flagged {
+            background-color: var(--warning-glow);
+            color: var(--warning);
+        }
+
+        .badge-deleted {
+            background-color: var(--danger-glow);
+            color: var(--danger);
+        }
+
+        .badge-allowed {
+            background-color: var(--success-glow);
+            color: var(--success);
+        }
+
+        /* Message content */
+        .message-content {
+            max-width: 300px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .message-content.expanded {
+            white-space: normal;
+            max-width: 100%;
+            overflow: visible;
+            word-break: break-word;
+        }
+
+        /* Toast notifications */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--toast-bg);
+            color: var(--toast-text);
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            z-index: 50;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast i {
+            font-size: 1.25rem;
+        }
+
+        .toast-success {
+            background-color: var(--toast-success);
+        }
+
+        .toast-error {
+            background-color: var(--toast-error);
+        }
+
+        .toast-warning {
+            background-color: var(--toast-warning);
+            color: #1f2937;
+        }
+
+        .toast-info {
+            background-color: var(--toast-info);
+        }
+
+        /* Theme toggle */
+        .theme-toggle {
+            position: fixed;
+            bottom: 2rem;
+            left: 2rem;
+            width: 3rem;
+            height: 3rem;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border: none;
+            z-index: 40;
+            transition: all 0.2s;
+        }
+
+        .theme-toggle:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1024px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+
+            .filters {
+                position: static;
+                margin-bottom: 1.5rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .stats {
+                flex-direction: column;
+            }
+
+            .stat-card {
+                width: 100%;
+            }
+
+            .filter-row {
+                flex-direction: column;
+                gap: 1rem;
+            }
+        }
+
+        /* Visualization styles */
+        .visualization-section {
+            margin: 2rem 0;
+            background: var(--card-bg);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: var(--card-shadow);
+        }
+
+        .visualization-section h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text);
+            margin: 0 0 1.5rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 1.5rem;
+        }
+
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .chart-wrapper {
+            background: var(--card-bg);
+            border-radius: 0.5rem;
+            padding: 1.25rem;
+            box-shadow: var(--card-shadow);
+        }
+
+        .chart-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text);
+            margin: 0 0 1rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .chart-title i {
+            color: var(--primary);
+        }
+
+        /* Animation for data updates */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .updated {
+            animation: fadeIn 0.3s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1>PRISM Moderation Dashboard</h1>
+                <p>Real-time monitoring of flagged and moderated content</p>
+            </div>
+            <button id="refresh-btn" class="btn" style="display: flex; align-items: center; gap: 0.5rem; background: var(--primary); color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.375rem; cursor: pointer;">
+                <i class="fas fa-sync-alt"></i>
+                <span>Refresh</span>
+            </button>
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="total-flagged">0</div>
+                    <div class="stat-label">Total Flagged</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="total-deleted">0</div>
+                    <div class="stat-label">Messages Deleted</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="total-users">0</div>
+                    <div class="stat-label">Unique Users</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Visualization Section -->
+        <div class="visualization-section">
+            <h2><i class="fas fa-chart-bar"></i> Data Visualizations</h2>
+            <div class="chart-grid">
+                <div class="chart-wrapper">
+                    <h3 class="chart-title"><i class="fas fa-chart-pie"></i> Message Actions</h3>
+                    <div class="chart-container">
+                        <canvas id="actionsChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-wrapper">
+                    <h3 class="chart-title"><i class="fas fa-tags"></i> Message Labels</h3>
+                    <div class="chart-container">
+                        <canvas id="labelsChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-wrapper" style="grid-column: 1 / -1;">
+                    <h3 class="chart-title"><i class="fas fa-chart-line"></i> Activity Timeline</h3>
+                    <div class="chart-container">
+                        <canvas id="timelineChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="dashboard">
+            <div class="filters">
+                <div class="filter-section">
+                    <h3><i class="fas fa-filter"></i> Quick Filters</h3>
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="filter-action">Action Type</label>
+                            <select id="filter-action" multiple>
+                                <option value="flagged">Flagged</option>
+                                <option value="deleted">Deleted</option>
+                                <option value="allowed">Allowed</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-label">Label</label>
+                            <select id="filter-label" multiple>
+                                <option value="spam">Spam</option>
+                                <option value="toxic">Toxic</option>
+                                <option value="harassment">Harassment</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="filter-user">User</label>
+                            <input type="text" id="filter-user" placeholder="Filter by username">
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-content">Content</label>
+                            <input type="text" id="filter-content" placeholder="Search in messages">
+                        </div>
+                    </div>
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="filter-date-from">From</label>
+                            <input type="datetime-local" id="filter-date-from">
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-date-to">To</label>
+                            <input type="datetime-local" id="filter-date-to">
+                        </div>
+                    </div>
+                    <div class="filter-actions">
+                        <button id="apply-filters" class="btn btn-primary" style="width: 100%; margin-bottom: 0.5rem;">
+                            <i class="fas fa-filter"></i> Apply Filters
+                        </button>
+                        <button id="reset-filters" class="btn btn-outline" style="width: 100%;">
+                            <i class="fas fa-undo"></i> Reset Filters
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content">
+                <div class="content-header">
+                    <h2><i class="fas fa-list"></i> Moderation Log</h2>
+                    <div class="content-actions">
+                        <div class="pagination-info" id="pagination-info">Showing 0-0 of 0</div>
+                        <div class="pagination-controls">
+                            <button id="prev-page" class="btn btn-outline" disabled>
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <button id="next-page" class="btn btn-outline" disabled>
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table id="moderation-table">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>User</th>
+                                <th>Action</th>
+                                <th>Label</th>
+                                <th>Content</th>
+                                <th>Channel</th>
+                                <th>Confidence</th>
+                            </tr>
+                        </thead>
+                        <tbody id="moderation-body">
+                            <tr>
+                                <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                                    <i class="fas fa-spinner fa-spin" style="margin-right: 0.5rem;"></i>
+                                    Loading moderation data...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast notification container -->
+    <div id="toast" class="toast">
+        <i class="fas fa-info-circle"></i>
+        <div class="toast-message">This is a notification message</div>
+        <button class="toast-close" onclick="this.parentElement.classList.remove('show')">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+
+    <!-- Theme toggle button -->
+    <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">
+        <i class="fas fa-moon"></i>
+    </button>
+
+    <!-- JavaScript libraries -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    
+    <script>
+        // Initialize variables
+        let allEvents = [];
+        let filteredEvents = [];
+        let currentPage = 1;
+        const itemsPerPage = 10;
+        let actionsChart, labelsChart, timelineChart;
+        
+        // Chart colors
+        const chartColors = {
+            flagged: 'rgba(245, 158, 11, 0.8)',  // yellow
+            deleted: 'rgba(239, 68, 68, 0.8)',   // red
+            allowed: 'rgba(16, 185, 129, 0.8)',  // green
+            spam: 'rgba(139, 92, 246, 0.8)',     // purple
+            toxic: 'rgba(220, 38, 38, 0.8)',     // red-600
+            harassment: 'rgba(219, 39, 119, 0.8)', // pink-600
+            other: 'rgba(107, 114, 128, 0.8)'    // gray-500
+        };
+
+        // Initialize charts
+        function initCharts() {
+            const actionsCtx = document.getElementById('actionsChart').getContext('2d');
+            const labelsCtx = document.getElementById('labelsChart').getContext('2d');
+            const timelineCtx = document.getElementById('timelineChart').getContext('2d');
+            
+            // Actions chart (bar)
+            actionsChart = new Chart(actionsCtx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Count',
+                        data: [],
+                        backgroundColor: [],
+                        borderColor: [],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.parsed.y} ${context.parsed.y === 1 ? 'action' : 'actions'}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Labels chart (doughnut)
+            labelsChart = new Chart(labelsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: [],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                color: 'var(--text)'
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = Math.round((value / total) * 100);
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Timeline chart (line)
+            timelineChart = new Chart(timelineCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Messages',
+                        data: [],
+                        borderColor: 'rgba(109, 40, 217, 0.8)',
+                        backgroundColor: 'rgba(109, 40, 217, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: 'rgba(255, 255, 255, 0.9)',
+                        pointBorderColor: 'rgba(109, 40, 217, 0.8)',
+                        pointHoverBackgroundColor: 'rgba(255, 255, 255, 1)',
+                        pointHoverBorderColor: 'rgba(109, 40, 217, 1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.parsed.y} ${context.parsed.y === 1 ? 'message' : 'messages'}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update charts with data
+        function updateCharts(events) {
+            if (!events || events.length === 0) return;
+
+            // Process actions data
+            const actions = {};
+            const labels = {};
+            const timeline = {};
+
+            // Process all events
+            events.forEach(event => {
+                // Count actions
+                const action = event.action || 'unknown';
+                actions[action] = (actions[action] || 0) + 1;
+                
+                // Count labels
+                const label = event.label || 'other';
+                labels[label] = (labels[label] || 0) + 1;
+                
+                // Group by date for timeline
+                if (event.timestamp) {
+                    const date = event.timestamp.split('T')[0];
+                    timeline[date] = (timeline[date] || 0) + 1;
+                }
+            });
+
+            // Update actions chart
+            const actionLabels = Object.keys(actions);
+            const actionData = Object.values(actions);
+            const actionColors = actionLabels.map(action => 
+                chartColors[action.toLowerCase()] || chartColors.other
+            );
+            
+            actionsChart.data.labels = actionLabels.map(a => a.charAt(0).toUpperCase() + a.slice(1));
+            actionsChart.data.datasets[0].data = actionData;
+            actionsChart.data.datasets[0].backgroundColor = actionColors;
+            actionsChart.data.datasets[0].borderColor = actionColors.map(c => c.replace('0.8', '1'));
+            actionsChart.update();
+            
+            // Update labels chart
+            const labelLabels = Object.keys(labels);
+            const labelData = Object.values(labels);
+            const labelColors = labelLabels.map(label => 
+                chartColors[label.toLowerCase()] || chartColors.other
+            );
+            
+            labelsChart.data.labels = labelLabels.map(l => l.charAt(0).toUpperCase() + l.slice(1));
+            labelsChart.data.datasets[0].data = labelData;
+            labelsChart.data.datasets[0].backgroundColor = labelColors;
+            labelsChart.update();
+            
+            // Update timeline chart
+            if (Object.keys(timeline).length > 0) {
+                const sortedDates = Object.keys(timeline).sort();
+                const timelineData = sortedDates.map(date => timeline[date]);
+                
+                timelineChart.data.labels = sortedDates;
+                timelineChart.data.datasets[0].data = timelineData;
+                timelineChart.update();
+            }
+        }
+
+        // Load data from JSON file with cache busting
+        async function loadData() {
+            try {
+                showToast('Refreshing data...', 'info');
+                
+                // Add timestamp to prevent caching
+                const timestamp = new Date().getTime();
+                const response = await fetch(`report_data.json?t=${timestamp}`, {
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    }
+                });
+                
+                if (!response.ok) throw new Error('Failed to load data');
+                
+                const data = await response.json();
+                const newEvents = data.events || [];
+                
+                // Only update if we have new data
+                if (JSON.stringify(allEvents) !== JSON.stringify(newEvents)) {
+                    allEvents = newEvents;
+                    
+                    // Update charts with all data
+                    updateCharts(allEvents);
+                    
+                    // Update stats
+                    updateStats(allEvents);
+                    
+                    // Apply any active filters
+                    applyFilters();
+                    
+                    showToast('Data refreshed successfully', 'success');
+                } else {
+                    showToast('Data is up to date', 'info');
+                }
+                
+                return allEvents;
+            } catch (error) {
+                console.error('Error loading data:', error);
+                showToast('Error loading data: ' + error.message, 'error');
+                return [];
+            }
+        }
+
+        // Update statistics
+        function updateStats(events) {
+            if (!events) return;
+            
+            const flaggedCount = events.filter(e => e.action === 'flagged').length;
+            const deletedCount = events.filter(e => e.action === 'deleted').length;
+            const uniqueUsers = new Set(events.map(e => e.user_id || e.user)).size;
+            
+            document.getElementById('total-flagged').textContent = flaggedCount;
+            document.getElementById('total-deleted').textContent = deletedCount;
+            document.getElementById('total-users').textContent = uniqueUsers;
+        }
+
+        // Apply filters to the data
+        function applyFilters() {
+            if (!allEvents || allEvents.length === 0) return;
+            
+            const actionFilter = Array.from(document.getElementById('filter-action').selectedOptions).map(o => o.value);
+            const labelFilter = Array.from(document.getElementById('filter-label').selectedOptions).map(o => o.value);
+            const userFilter = document.getElementById('filter-user').value.toLowerCase();
+            const contentFilter = document.getElementById('filter-content').value.toLowerCase();
+            const dateFrom = document.getElementById('filter-date-from').value;
+            const dateTo = document.getElementById('filter-date-to').value;
+            
+            filteredEvents = allEvents.filter(event => {
+                // Filter by action
+                if (actionFilter.length > 0 && !actionFilter.includes(event.action)) {
+                    return false;
+                }
+                
+                // Filter by label
+                if (labelFilter.length > 0 && (!event.label || !labelFilter.includes(event.label))) {
+                    return false;
+                }
+                
+                // Filter by user
+                if (userFilter && !(event.user || '').toLowerCase().includes(userFilter)) {
+                    return false;
+                }
+                
+                // Filter by content
+                if (contentFilter && !(event.content || '').toLowerCase().includes(contentFilter)) {
+                    return false;
+                }
+                
+                // Filter by date range
+                if (event.timestamp) {
+                    const eventDate = new Date(event.timestamp);
+                    
+                    if (dateFrom) {
+                        const fromDate = new Date(dateFrom);
+                        if (eventDate < fromDate) return false;
+                    }
+                    
+                    if (dateTo) {
+                        const toDate = new Date(dateTo);
+                        toDate.setHours(23, 59, 59, 999); // End of the day
+                        if (eventDate > toDate) return false;
+                    }
+                }
+                
+                return true;
+            });
+            
+            // Reset to first page when filters change
+            currentPage = 1;
+            
+            // Update the table with filtered data
+            updateTable();
+            
+            // Update charts with filtered data
+            updateCharts(filteredEvents);
+        }
+
+        // Update the table with current page data
+        function updateTable() {
+            const tbody = document.getElementById('moderation-body');
+            
+            if (!filteredEvents || filteredEvents.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                            No data available matching the selected filters.
+                        </td>
+                    </tr>`;
+                
+                // Update pagination info
+                document.getElementById('pagination-info').textContent = 'Showing 0-0 of 0';
+                document.getElementById('prev-page').disabled = true;
+                document.getElementById('next-page').disabled = true;
+                
+                return;
+            }
+            
+            // Calculate pagination
+            const totalPages = Math.ceil(filteredEvents.length / itemsPerPage);
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = Math.min(startIndex + itemsPerPage, filteredEvents.length);
+            const pageData = filteredEvents.slice(startIndex, endIndex);
+            
+            // Update table rows
+            tbody.innerHTML = pageData.map(event => {
+                const time = event.timestamp ? new Date(event.timestamp).toLocaleString() : 'N/A';
+                const actionClass = `badge-${event.action || 'unknown'}`;
+                const labelClass = event.label ? `label-${event.label.toLowerCase()}` : '';
+                const confidence = event.probability ? `${(event.probability * 100).toFixed(1)}%` : 'N/A';
+                
+                return `
+                    <tr class="updated">
+                        <td>${time}</td>
+                        <td>${escapeHtml(event.user || 'Unknown')}</td>
+                        <td><span class="badge ${actionClass}">${event.action || 'N/A'}</span></td>
+                        <td><span class="label ${labelClass}">${event.label || 'N/A'}</span></td>
+                        <td class="message-content" onclick="this.classList.toggle('expanded')">
+                            ${event.content ? escapeHtml(event.content) : 'No content'}
+                        </td>
+                        <td>${event.channel ? `#${event.channel}` : 'N/A'}</td>
+                        <td>${confidence}</td>
+                    </tr>`;
+            }).join('');
+            
+            // Update pagination info
+            document.getElementById('pagination-info').textContent = 
+                `Showing ${startIndex + 1}-${endIndex} of ${filteredEvents.length}`;
+                
+            // Update pagination buttons
+            document.getElementById('prev-page').disabled = currentPage <= 1;
+            document.getElementById('next-page').disabled = currentPage >= totalPages;
+        }
+
+        // Helper function to escape HTML
+        function escapeHtml(unsafe) {
+            if (!unsafe) return '';
+            return unsafe
+                .toString()
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // Show toast notification
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastMessage = toast.querySelector('.toast-message');
+            const toastIcon = toast.querySelector('i');
+            
+            // Set message and type
+            toastMessage.textContent = message;
+            
+            // Update icon and colors based on type
+            toast.className = 'toast';
+            toast.classList.add(`toast-${type}`);
+            
+            switch(type) {
+                case 'success':
+                    toastIcon.className = 'fas fa-check-circle';
+                    break;
+                case 'error':
+                    toastIcon.className = 'fas fa-exclamation-circle';
+                    break;
+                case 'warning':
+                    toastIcon.className = 'fas fa-exclamation-triangle';
+                    break;
+                default:
+                    toastIcon.className = 'fas fa-info-circle';
+            }
+            
+            // Show the toast
+            setTimeout(() => {
+                toast.classList.add('show');
+                
+                // Hide after 3 seconds
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 3000);
+            }, 100);
+        }
+
+        // Toggle message expansion
+        function toggleMessageExpansion(event) {
+            if (event.target.classList.contains('message-content')) {
+                event.target.classList.toggle('expanded');
+            }
+        }
+
+        // Toggle theme
+        function toggleTheme() {
+            const themeToggle = document.getElementById('theme-toggle');
+            const icon = themeToggle.querySelector('i');
+            
+            if (document.documentElement.getAttribute('data-theme') === 'dark') {
+                document.documentElement.removeAttribute('data-theme');
+                localStorage.setItem('theme', 'light');
+                icon.className = 'fas fa-moon';
+            } else {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+                icon.className = 'fas fa-sun';
+            }
+        }
+
+        // Initialize theme from localStorage or prefer-color-scheme
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const themeToggle = document.getElementById('theme-toggle');
+            const icon = themeToggle.querySelector('i');
+            
+            if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                icon.className = 'fas fa-sun';
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+                icon.className = 'fas fa-moon';
+            }
+        }
+
+        // Initialize Select2 for multi-select dropdowns
+        function initSelect2() {
+            $('select[multiple]').select2({
+                placeholder: 'Select options',
+                width: '100%',
+                closeOnSelect: false,
+                theme: 'classic',
+                dropdownAutoWidth: true,
+                dropdownParent: $('.filters')
+            });
+            
+            // Style Select2 to match our theme
+            const style = document.createElement('style');
+            style.textContent = `
+                .select2-container--default .select2-selection--multiple {
+                    background-color: var(--input-bg);
+                    border: 1px solid var(--input-border);
+                    border-radius: 0.375rem;
+                    min-height: 38px;
+                    transition: border-color 0.2s, box-shadow 0.2s;
+                }
+                .select2-container--default.select2-container--focus .select2-selection--multiple {
+                    border-color: var(--primary);
+                    box-shadow: 0 0 0 3px var(--primary-glow);
+                }
+                .select2-container--default .select2-selection--multiple .select2-selection__choice {
+                    background-color: var(--primary);
+                    border: 1px solid var(--primary);
+                    color: white;
+                    border-radius: 0.25rem;
+                    padding: 0 0.5rem;
+                    margin: 0.25rem;
+                }
+                .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+                    color: rgba(255, 255, 255, 0.7);
+                    margin-right: 0.25rem;
+                }
+                .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
+                    color: white;
+                }
+                .select2-dropdown {
+                    background-color: var(--card-bg);
+                    border: 1px solid var(--border);
+                    border-radius: 0.375rem;
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+                }
+                .select2-container--default .select2-results__option[aria-selected=true] {
+                    background-color: var(--primary);
+                    color: white;
+                }
+                .select2-container--default .select2-results__option--highlighted[aria-selected] {
+                    background-color: var(--primary-hover);
+                    color: white;
+                }
+                .select2-search--dropdown .select2-search__field {
+                    background-color: var(--input-bg);
+                    color: var(--text);
+                    border: 1px solid var(--input-border);
+                    border-radius: 0.25rem;
+                    padding: 0.375rem 0.5rem;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        // Initialize date pickers
+        function initDatePickers() {
+            flatpickr('#filter-date-from, #filter-date-to', {
+                enableTime: true,
+                dateFormat: 'Y-m-d H:i',
+                time_24hr: true,
+                theme: 'light',
+                allowInput: true
+            });
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize theme
+            initTheme();
+            
+            // Initialize UI components
+            initSelect2();
+            initDatePickers();
+            initCharts();
+            
+            // Initial data load
+            let refreshInterval;
+            
+            const startAutoRefresh = () => {
+                // Clear any existing interval
+                if (refreshInterval) clearInterval(refreshInterval);
+                
+                // Load data immediately
+                loadData().catch(error => {
+                    console.error('Error in initial data load:', error);
+                    showToast('Error loading initial data', 'error');
+                });
+                
+                // Set up auto-refresh every 30 seconds with error handling
+                refreshInterval = setInterval(async () => {
+                    try {
+                        await loadData();
+                    } catch (error) {
+                        console.error('Error in auto-refresh:', error);
+                        // Don't show toast for auto-refresh errors to avoid spamming
+                    }
+                }, 30000);
+            };
+            
+            // Start auto-refresh
+            startAutoRefresh();
+            
+            // Make refresh function available globally for manual refresh
+            window.manualRefresh = () => {
+                showToast('Manual refresh started...', 'info');
+                loadData().catch(error => {
+                    console.error('Error in manual refresh:', error);
+                    showToast('Error refreshing data', 'error');
+                });
+            };
+            
+            // Filter change handlers
+            document.getElementById('apply-filters').addEventListener('click', applyFilters);
+            document.getElementById('reset-filters').addEventListener('click', () => {
+                // Reset all filters
+                document.querySelectorAll('select[multiple]').forEach(select => {
+                    $(select).val(null).trigger('change');
+                });
+                document.getElementById('filter-user').value = '';
+                document.getElementById('filter-content').value = '';
+                document.getElementById('filter-date-from').value = '';
+                document.getElementById('filter-date-to').value = '';
+                
+                // Apply filters (which will show all data)
+                applyFilters();
+            });
+            
+            // Pagination
+            document.getElementById('prev-page').addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    updateTable();
+                }
+            });
+            
+            document.getElementById('next-page').addEventListener('click', () => {
+                const totalPages = Math.ceil(filteredEvents.length / itemsPerPage);
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    updateTable();
+                }
+            });
+            
+            // Theme toggle
+            document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+            
+            // Refresh button - using the global manualRefresh function
+            document.getElementById('refresh-btn').addEventListener('click', () => window.manualRefresh());
+            
+            // Message expansion
+            document.addEventListener('click', toggleMessageExpansion);
+            
+            // Handle Enter key in filter inputs
+            document.getElementById('filter-user').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') applyFilters();
+            });
+            
+            document.getElementById('filter-content').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') applyFilters();
+            });
+            
+            // Show toast on page load
+            setTimeout(() => {
+                showToast('Dashboard loaded successfully', 'success');
+            }, 500);
+        });
+    </script>
+</body>
+</html>
