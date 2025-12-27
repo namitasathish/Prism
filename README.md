@@ -22,8 +22,8 @@ Prism is a Discord bot that uses machine learning to detect and moderate harmful
 - Commands like !history [n], !dashboard
 
 ## Tech Stack
-•	Python 3.8+, discord.py
-•	Scikit learn (Logistic Regression + TF IDF)
-•	Pandas, NLTK/regex for preprocessing
-•	Joblib for model persistence
+- Python 3.8+, discord.py
+- Scikit learn (Logistic Regression + TF IDF)
+- Pandas, NLTK/regex for preprocessing
+- Joblib for model persistence
 
