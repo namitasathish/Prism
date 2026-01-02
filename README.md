@@ -31,5 +31,5 @@ Prism is a Discord bot that uses machine learning to detect and moderate harmful
 <img src="img2.png" width="750" height="650">
 <img src="img3.png" width="750" height="650">
 <img src="img4.png" width="750" height="650">
-<img src="img4.png" width="750" height="650">
+<img src="img5.png" width="750" height="650">
  
