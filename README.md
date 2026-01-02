@@ -26,4 +26,10 @@ Prism is a Discord bot that uses machine learning to detect and moderate harmful
 - Pandas, NLTK/regex for preprocessing
 - Joblib for model persistence
 
+# Peek into the project
+<img src="img1.png" width="750" height="650">
+<img src="img2.png" width="750" height="650">
+<img src="img3.png" width="750" height="650">
+<img src="img4.png" width="750" height="650">
+<img src="img4.png" width="750" height="650">
  
